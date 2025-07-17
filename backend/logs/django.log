@@ -1,0 +1,4 @@
+INFO 2025-07-15 18:36:12,069 autoreload 6192 20228 Watching for file changes with StatReloader
+INFO 2025-07-15 18:36:15,936 basehttp 6192 17580 "GET / HTTP/1.1" 200 11995
+WARNING 2025-07-15 18:36:16,064 log 6192 17580 Not Found: /favicon.ico
+WARNING 2025-07-15 18:36:16,064 basehttp 6192 17580 "GET /favicon.ico HTTP/1.1" 404 2217
