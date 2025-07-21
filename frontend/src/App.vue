@@ -1,4 +1,3 @@
-
 <template>
   <div class="flex flex-col min-h-screen bg-gray-100">
     <!-- 頂部播放器 - 固定在頂部 -->
@@ -39,91 +38,65 @@
       <!-- 主要內容 -->
       <main class="flex-1 overflow-hidden">
         <div class="h-full p-8">
-          <!-- 測試播放器的臨時內容 -->
-          <div class="max-w-4xl mx-auto space-y-8">
-            <h1 class="text-3xl font-bold text-gray-800">
-              🎵 DDM360 音樂串流平台
-            </h1>
+          <div class="max-w-7xl mx-auto space-y-8">
+            <!-- 搜尋區域 -->
+            <SearchBar 
+              v-model:search-query="searchQuery"
+              :is-searching="isSearching"
+              @search="handleSearch"
+              @clear="handleClearSearch"
+            />
             
-            <!-- 播放器測試區域 -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">播放器測試</h3>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- 測試歌曲列表 -->
-                <div>
-                  <h4 class="font-medium text-gray-600 mb-3">測試歌曲</h4>
-                  <div class="space-y-2">
-                    <button 
-                      v-for="track in testTracks" 
-                      :key="track.id"
-                      @click="handleTestPlayTrack(track)"
-                      class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                      :class="{ 'bg-orange-50 border-orange-200': playerStore.currentTrack.id === track.id }"
-                    >
-                      <div class="font-medium text-sm">{{ track.name }}</div>
-                      <div class="text-xs text-gray-500">{{ track.artist_name }}</div>
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- 當前狀態 -->
-                <div>
-                  <h4 class="font-medium text-gray-600 mb-3">播放器狀態</h4>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <span>狀態:</span>
-                      <span :class="playerStore.isPlaying ? 'text-green-600' : 'text-gray-500'">
-                        {{ playerStore.isPlaying ? '播放中' : '已暫停' }}
-                      </span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span>載入中:</span>
-                      <span :class="playerStore.isLoadingTrack ? 'text-orange-600' : 'text-gray-500'">
-                        {{ playerStore.isLoadingTrack ? '是' : '否' }}
-                      </span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span>音量:</span>
-                      <span>{{ playerStore.volume }}%</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span>隨機播放:</span>
-                      <span>{{ playerStore.isShuffled ? '開啟' : '關閉' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span>重複模式:</span>
-                      <span>{{ repeatModeText }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 曲風按鈕 -->
+            <GenreButtons 
+              :jamendo-tags="availableTags"
+              :selected-tag="selectedTag"
+              @search-by-tag="handleSearchByTag"
+            />
             
-            <!-- 其他狀態卡片 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <!-- 當前模式 -->
-              <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">當前模式</h3>
-                <p class="text-2xl font-bold text-blue-600">{{ modeDisplayName }}</p>
-              </div>
-              
-              <!-- 用戶狀態 -->
-              <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">用戶狀態</h3>
-                <p class="font-medium" :class="userStore.user ? 'text-green-600' : 'text-gray-500'">
-                  {{ userStore.user ? `✅ ${userStore.user.username}` : '👤 未登入' }}
-                </p>
-              </div>
-              
-              <!-- Jamendo 狀態 -->
-              <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Jamendo 狀態</h3>
-                <p class="font-medium" :class="jamendoStatusColor">
-                  {{ jamendoStatusIcon }} {{ jamendoStatusText }}
-                </p>
-              </div>
-            </div>
+            <!-- 播放列表控制 -->
+            <PlaylistControl 
+              :playlist-config="playlistConfig"
+              :is-generating-playlist="isGeneratingPlaylist"
+              :custom-playlist-status="customPlaylistStatus"
+              :current-mode="appStore.currentMode"
+              @start-custom-playlist="handleStartCustomPlaylist"
+            />
+            
+            <!-- 收藏頁面標題 -->
+            <FavoriteHeader 
+              v-if="appStore.currentMode === 'favorites'"
+              :favorite-count="favoriteTrackIds.size"
+              :total-duration="totalFavoriteDuration"
+              :last-favorite-date="lastFavoriteDate"
+              @play-all="handlePlayAllFavorites"
+              @shuffle-play="handleShuffleFavorites"
+              @clear-favorites="handleClearFavorites"
+              @explore-music="() => appStore.setCurrentMode('popular')"
+            />
+            
+            <!-- 音樂網格 -->
+            <MusicGrid 
+              :displayed-tracks="displayedTracks"
+              :current-track="playerStore.currentTrack"
+              :is-playing="playerStore.isPlaying"
+              :is-loading-track="playerStore.isLoadingTrack"
+              :favorite-track-ids="favoriteTrackIds"
+              :loading="isLoading"
+              :loading-more="isLoadingMore"
+              :show-load-more="showLoadMore"
+              :current-mode="appStore.currentMode"
+              :is-jamendo-connected="jamendoStore.isConnected"
+              :jamendo-configured="jamendoStore.configured"
+              :user="userStore.user"
+              @track-click="handleTrackClick"
+              @toggle-favorite="handleToggleFavorite"
+              @add-to-playlist="handleAddToPlaylist"
+              @share-track="handleShareTrack"
+              @connect-jamendo="handleConnectJamendo"
+              @show-login="handleShowLogin"
+              @load-more="handleLoadMore"
+            />
           </div>
         </div>
       </main>
@@ -142,9 +115,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import TopPlayer from './components/player/TopPlayer.vue'
 import Sidebar from './components/layout/Sidebar.vue'
+import SearchBar from './components/ui/SearchBar.vue'
+import GenreButtons from './components/music/GenreButtons.vue'
+import PlaylistControl from './components/music/PlaylistControl.vue'
+import FavoriteHeader from './components/music/FavoriteHeader.vue'
+import MusicGrid from './components/music/MusicGrid.vue'
 import AuthModal from './components/auth/AuthModal.vue'
 
 // Pinia Stores
@@ -153,138 +131,262 @@ import { useUserStore } from './stores/userStore'
 import { useAppStore } from './stores/appStore'
 import { usePlayerStore } from './stores/playerStore'
 
-// 使用 Pinia stores
+// Composables
+import { useJamendo } from './composables/useJamendo'
+
+// 使用 stores
 const jamendoStore = useJamendoStore()
 const userStore = useUserStore()
 const appStore = useAppStore()
 const playerStore = usePlayerStore()
 
-// 測試數據
-const testTracks = ref([
-  {
-    id: 1,
-    name: "Happy Time",
-    artist_name: "Omotesound Tokyo",
-    album_name: "Happy Album",
-    duration: 186,
-    image: "https://usercontent.jamendo.com/a/a1/0/1/track/a10010.jpg",
-    audio: "https://prod-1.storage.jamendo.com/download/track/1/mp32/",
-    audiodownload: "https://prod-1.storage.jamendo.com/download/track/1/mp32/"
-  },
-  {
-    id: 2,
-    name: "Night Party",
-    artist_name: "Omotesound Tokyo",
-    album_name: "Night Album",
-    duration: 203,
-    image: "https://usercontent.jamendo.com/a/a2/0/2/track/a20020.jpg",
-    audio: "https://prod-1.storage.jamendo.com/download/track/2/mp32/",
-    audiodownload: "https://prod-1.storage.jamendo.com/download/track/2/mp32/"
-  },
-  {
-    id: 3,
-    name: "Jazz Cocktail Lounge",
-    artist_name: "Pinegroove",
-    album_name: "Lounge Collection",
-    duration: 225,
-    image: "https://usercontent.jamendo.com/a/a3/0/3/track/a30030.jpg",
-    audio: "https://prod-1.storage.jamendo.com/download/track/3/mp32/",
-    audiodownload: "https://prod-1.storage.jamendo.com/download/track/3/mp32/"
-  }
+// 使用 Jamendo composable
+const jamendo = useJamendo()
+
+// 響應式數據
+const searchQuery = ref('')
+const selectedTag = ref('')
+const isSearching = ref(false)
+const isLoading = ref(false)
+const isLoadingMore = ref(false)
+const showLoadMore = ref(false)
+const displayedTracks = ref([])
+const favoriteTrackIds = ref(new Set())
+const availableTags = ref(['pop', 'rock', 'electronic', 'jazz', 'classical', 'hiphop', 'metal', 'world', 'soundtrack', 'lounge'])
+
+// 播放列表配置
+const playlistConfig = ref([
+  { genre: 'Pop', count: 3 },
+  { genre: 'Rock', count: 5 },
+  { genre: 'Jazz', count: 1 }
 ])
+const isGeneratingPlaylist = ref(false)
+const customPlaylistStatus = ref({
+  isActive: false,
+  currentGroup: 1,
+  currentGenre: 'Pop',
+  currentInGroup: 1,
+  totalInGroup: 3,
+  overallProgress: 1,
+  totalTracks: 9
+})
 
 // 計算屬性
-const modeDisplayName = computed(() => {
-  const modeMap = {
-    'popular': '🔥 熱門歌曲',
-    'latest': '🆕 最新音樂',
-    'random': '🎲 隨機播放',
-    'favorites': '❤️ 我的收藏'
+const totalFavoriteDuration = computed(() => {
+  // 計算收藏歌曲的總時長
+  return 0 // TODO: 實現邏輯
+})
+
+const lastFavoriteDate = computed(() => {
+  // 最後收藏的日期
+  return null // TODO: 實現邏輯
+})
+
+// 載入歌曲數據
+const loadTracks = async () => {
+  if (!jamendoStore.isConnected) {
+    console.log('⚠️ Jamendo 未連接，無法載入音樂')
+    return
   }
-  return modeMap[appStore.currentMode] || '未知模式'
-})
 
-const repeatModeText = computed(() => {
-  const modeMap = {
-    'off': '關閉',
-    'all': '列表重複',
-    'one': '單曲重複'
+  try {
+    isLoading.value = true
+    let tracks = []
+
+    switch (appStore.currentMode) {
+      case 'popular':
+        tracks = await jamendo.getPopularTracks()
+        break
+      case 'latest':
+        tracks = await jamendo.getLatestTracks()
+        break
+      case 'random':
+        tracks = await jamendo.getRandomTracks()
+        break
+      case 'favorites':
+        tracks = getFavoriteTracks()
+        break
+      case 'search':
+        if (searchQuery.value) {
+          tracks = await jamendo.searchTracks(searchQuery.value)
+        }
+        break
+      case 'genre':
+        if (selectedTag.value) {
+          tracks = await jamendo.getTracksByTag(selectedTag.value)
+        }
+        break
+    }
+
+    displayedTracks.value = tracks
+    showLoadMore.value = tracks.length >= 50
+
+  } catch (error) {
+    console.error('❌ 載入音樂失敗:', error)
+    displayedTracks.value = []
+  } finally {
+    isLoading.value = false
   }
-  return modeMap[playerStore.repeatMode]
-})
-
-const jamendoStatusColor = computed(() => {
-  if (!jamendoStore.configured) return 'text-red-500'
-  if (!jamendoStore.isConnected) return 'text-yellow-500'
-  return 'text-green-500'
-})
-
-const jamendoStatusIcon = computed(() => {
-  if (!jamendoStore.configured) return '❌'
-  if (!jamendoStore.isConnected) return '⚠️'
-  return '✅'
-})
-
-const jamendoStatusText = computed(() => {
-  if (!jamendoStore.configured) return '未配置'
-  if (!jamendoStore.isConnected) return '未連接'
-  return '已連接'
-})
-
-// 播放器事件處理
-const handleTestPlayTrack = (track) => {
-  playerStore.setCurrentTrack(track)
-  playerStore.setPlaying(true)
-  console.log('🎵 測試播放:', track.name)
 }
 
+// 獲取收藏歌曲
+const getFavoriteTracks = () => {
+  if (!userStore.user) return []
+  
+  const favorites = JSON.parse(localStorage.getItem(`favorites_${userStore.user.id}`) || '[]')
+  return favorites
+}
+
+// 載入收藏狀態
+const loadFavoriteStatus = () => {
+  if (!userStore.user) {
+    favoriteTrackIds.value = new Set()
+    return
+  }
+  
+  const favorites = getFavoriteTracks()
+  favoriteTrackIds.value = new Set(favorites.map(track => track.id))
+}
+
+// 事件處理 - 播放控制
 const handleTogglePlay = () => {
-  playerStore.togglePlay()
+  jamendo.togglePlay()
 }
 
 const handlePreviousTrack = () => {
-  console.log('⏮️ 上一首')
-  // 實際實現會調用 useJamendo 的 previousTrack
+  jamendo.previousTrack()
 }
 
 const handleNextTrack = () => {
-  console.log('⏭️ 下一首')
-  // 實際實現會調用 useJamendo 的 nextTrack
+  jamendo.nextTrack()
 }
 
 const handleSeek = (event) => {
-  const newTime = event.targetTime
-  playerStore.setCurrentTime(newTime)
-  console.log('🎯 跳轉到:', Math.floor(newTime), '秒')
+  jamendo.seek(event)
 }
 
 const handleVolumeChange = (event) => {
-  const newVolume = parseInt(event.target.value)
-  playerStore.setVolume(newVolume)
-  console.log('🔊 音量設為:', newVolume + '%')
+  jamendo.setVolume(event.target.value)
 }
 
 const handleToggleShuffle = () => {
-  playerStore.toggleShuffle()
+  jamendo.toggleShuffle()
 }
 
 const handleToggleRepeat = () => {
-  playerStore.toggleRepeat()
+  jamendo.toggleRepeat()
+}
+
+// 事件處理 - 歌曲操作
+const handleTrackClick = async (track, playlist, index) => {
+  try {
+    await jamendo.playTrack(track, playlist, index)
+  } catch (error) {
+    console.error('❌ 播放歌曲失敗:', error)
+  }
+}
+
+const handleToggleFavorite = (track) => {
+  if (!userStore.user) {
+    userStore.showLoginModal()
+    return
+  }
+
+  const favorites = getFavoriteTracks()
+  const isFavorited = favoriteTrackIds.value.has(track.id)
+
+  if (isFavorited) {
+    // 移除收藏
+    const updatedFavorites = favorites.filter(fav => fav.id !== track.id)
+    localStorage.setItem(`favorites_${userStore.user.id}`, JSON.stringify(updatedFavorites))
+    favoriteTrackIds.value.delete(track.id)
+    console.log('💔 取消收藏:', track.name)
+  } else {
+    // 添加收藏
+    const updatedFavorites = [...favorites, { ...track, favoriteDate: new Date().toISOString() }]
+    localStorage.setItem(`favorites_${userStore.user.id}`, JSON.stringify(updatedFavorites))
+    favoriteTrackIds.value.add(track.id)
+    console.log('❤️ 添加收藏:', track.name)
+  }
+
+  // 如果在收藏頁面，重新載入
+  if (appStore.currentMode === 'favorites') {
+    loadTracks()
+  }
 }
 
 const handleAddToFavorites = () => {
-  console.log('❤️ 加入收藏:', playerStore.currentTrack.name)
+  if (!playerStore.currentTrack.name) return
+  handleToggleFavorite(playerStore.currentTrack)
 }
 
-const handleAddToPlaylist = () => {
-  console.log('📋 加入播放列表:', playerStore.currentTrack.name)
+const handleAddToPlaylist = (track) => {
+  console.log('📋 加入播放列表:', track?.name || playerStore.currentTrack.name)
+  // TODO: 實現播放列表功能
 }
 
-// 其他事件處理（與之前相同）
+const handleShareTrack = (track) => {
+  if (navigator.share && track) {
+    navigator.share({
+      title: track.name,
+      text: `正在聽 ${track.artist_name} 的 ${track.name}`,
+      url: window.location.href
+    })
+  }
+}
+
+// 事件處理 - 搜尋和篩選
+const handleSearch = async (query) => {
+  searchQuery.value = query
+  appStore.setCurrentMode('search')
+  await loadTracks()
+}
+
+const handleClearSearch = () => {
+  searchQuery.value = ''
+  appStore.setCurrentMode('popular')
+  loadTracks()
+}
+
+const handleSearchByTag = async (tag) => {
+  selectedTag.value = tag
+  appStore.setCurrentMode('genre')
+  await loadTracks()
+}
+
+// 事件處理 - 收藏操作
+const handlePlayAllFavorites = async () => {
+  const favorites = getFavoriteTracks()
+  if (favorites.length > 0) {
+    await jamendo.playTrack(favorites[0], favorites, 0)
+  }
+}
+
+const handleShuffleFavorites = async () => {
+  const favorites = getFavoriteTracks()
+  if (favorites.length > 0) {
+    playerStore.setShuffled(true)
+    const randomIndex = Math.floor(Math.random() * favorites.length)
+    await jamendo.playTrack(favorites[randomIndex], favorites, randomIndex)
+  }
+}
+
+const handleClearFavorites = () => {
+  if (confirm('確定要清空所有收藏嗎？此操作無法復原。')) {
+    localStorage.removeItem(`favorites_${userStore.user.id}`)
+    favoriteTrackIds.value.clear()
+    loadTracks()
+  }
+}
+
+// 事件處理 - 其他
 const handleConnectJamendo = async () => {
   try {
-    await jamendoStore.connect()
-    console.log('✅ Jamendo 連接成功')
+    const success = await jamendo.connectJamendo()
+    if (success) {
+      jamendoStore.setConnected(true)
+      loadTracks()
+    }
   } catch (error) {
     console.error('❌ Jamendo 連接失敗:', error)
   }
@@ -292,6 +394,7 @@ const handleConnectJamendo = async () => {
 
 const handleSetMode = (mode) => {
   appStore.setCurrentMode(mode)
+  loadTracks()
 }
 
 const handleShowLogin = () => {
@@ -300,11 +403,27 @@ const handleShowLogin = () => {
 
 const handleLogout = () => {
   userStore.logout()
+  favoriteTrackIds.value.clear()
   if (appStore.currentMode === 'favorites') {
     appStore.setCurrentMode('popular')
+    loadTracks()
   }
 }
 
+const handleLoadMore = async () => {
+  // TODO: 實現載入更多功能
+  console.log('📄 載入更多歌曲')
+}
+
+const handleStartCustomPlaylist = () => {
+  isGeneratingPlaylist.value = true
+  // TODO: 實現自定義播放列表生成
+  setTimeout(() => {
+    isGeneratingPlaylist.value = false
+  }, 2000)
+}
+
+// 認證相關事件處理
 const handleCloseAuthModal = () => {
   userStore.closeModal()
 }
@@ -312,6 +431,7 @@ const handleCloseAuthModal = () => {
 const handleLoginSuccess = (userData) => {
   userStore.setUser(userData)
   userStore.closeModal()
+  loadFavoriteStatus()
 }
 
 const handleRegisterSuccess = (userData) => {
@@ -322,6 +442,45 @@ const handleRegisterSuccess = (userData) => {
 const handleSwitchAuthMode = (mode) => {
   userStore.setModalMode(mode)
 }
+
+// 監聽模式變化
+watch(() => appStore.currentMode, (newMode) => {
+  console.log('🔄 模式切換至:', newMode)
+  loadTracks()
+})
+
+// 監聽用戶登入狀態
+watch(() => userStore.user, (newUser) => {
+  if (newUser) {
+    loadFavoriteStatus()
+  } else {
+    favoriteTrackIds.value.clear()
+  }
+})
+
+// 初始化
+onMounted(async () => {
+  console.log('🚀 DDM360 應用已初始化')
+  
+  // 初始化用戶狀態
+  userStore.initializeUser()
+  
+  // 載入收藏狀態
+  loadFavoriteStatus()
+  
+  // 載入可用標籤
+  try {
+    const tags = await jamendo.getAvailableTags()
+    availableTags.value = tags
+  } catch (error) {
+    console.warn('⚠️ 載入標籤失敗，使用預設標籤')
+  }
+  
+  // 如果 Jamendo 已連接，載入初始數據
+  if (jamendoStore.isConnected) {
+    loadTracks()
+  }
+})
 </script>
 
 <style scoped>

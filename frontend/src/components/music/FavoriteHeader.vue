@@ -128,6 +128,51 @@ const props = defineProps({
     type: Date,
     default: null
   }
+})
+
+defineEmits([
+  'play-all', 
+  'shuffle-play', 
+  'clear-favorites', 
+  'explore-music'
+])
+
+// 格式化總播放時長
+const formattedTotalDuration = computed(() => {
+  if (!props.totalDuration) return '0分鐘'
+  
+  const totalMinutes = Math.floor(props.totalDuration / 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  
+  if (hours > 0) {
+    return `${hours}小時${minutes}分`
+  } else {
+    return `${minutes}分鐘`
+  }
+})
+
+// 格式化最近收藏日期
+const recentFavoriteDate = computed(() => {
+  if (!props.lastFavoriteDate) return '暫無'
+  
+  const now = new Date()
+  const favoriteDate = new Date(props.lastFavoriteDate)
+  const diffTime = Math.abs(now - favoriteDate)
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
+  const diffMinutes = Math.floor(diffTime / (1000 * 60))
+  
+  if (diffDays > 0) {
+    return `${diffDays}天前`
+  } else if (diffHours > 0) {
+    return `${diffHours}小時前`
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes}分鐘前`
+  } else {
+    return '剛剛'
+  }
+})
 </script>
 
 <style scoped>
@@ -271,47 +316,3 @@ const props = defineProps({
   transform: scale(1.1);
 }
 </style>
-
-defineEmits([
-  'play-all', 
-  'shuffle-play', 
-  'clear-favorites', 
-  'explore-music'
-])
-
-// 格式化總播放時長
-const formattedTotalDuration = computed(() => {
-  if (!props.totalDuration) return '0分鐘'
-  
-  const totalMinutes = Math.floor(props.totalDuration / 60)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  
-  if (hours > 0) {
-    return `${hours}小時${minutes}分`
-  } else {
-    return `${minutes}分鐘`
-  }
-})
-
-// 格式化最近收藏日期
-const recentFavoriteDate = computed(() => {
-  if (!props.lastFavoriteDate) return '暫無'
-  
-  const now = new Date()
-  const favoriteDate = new Date(props.lastFavoriteDate)
-  const diffTime = Math.abs(now - favoriteDate)
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
-  const diffMinutes = Math.floor(diffTime / (1000 * 60))
-  
-  if (diffDays > 0) {
-    return `${diffDays}天前`
-  } else if (diffHours > 0) {
-    return `${diffHours}小時前`
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes}分鐘前`
-  } else {
-    return '剛剛'
-  }
-})

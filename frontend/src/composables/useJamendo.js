@@ -4,11 +4,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 export function useJamendo() {
   // 基本配置
   const JAMENDO_CLIENT_ID = import.meta.env.VITE_JAMENDO_CLIENT_ID
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || (
-    import.meta.env.PROD 
-      ? window.location.origin
-      : 'http://127.0.0.1:8000'
-  )
+  const JAMENDO_BASE_URL = 'https://api.jamendo.com/v3.0'
   
   // Store
   const playerStore = usePlayerStore()
@@ -22,12 +18,12 @@ export function useJamendo() {
   const lastError = ref('')
   const playbackState = ref('idle')
   
-  // 🆕 添加播放列表管理
+  // 播放列表管理
   const currentPlaylist = ref([])
   const currentTrackIndex = ref(0)
   const autoPlayNext = ref(true)
 
-  // 🆕 音頻格式驗證和備用 URL 處理
+  // 音頻格式驗證和備用 URL 處理
   const getSupportedAudioUrl = (track) => {
     const audioUrls = []
     
@@ -45,78 +41,27 @@ export function useJamendo() {
     return [...mp3Urls, ...otherUrls]
   }
 
-  // 🆕 改進的音頻 URL 測試機制
-  const testAudioUrl = async (url, quickTest = false) => {
-    return new Promise((resolve) => {
-      if (quickTest) {
-        try {
-          new URL(url)
-          console.log('✅ URL 格式有效 (快速測試):', url)
-          resolve(true)
-        } catch (error) {
-          console.warn('❌ URL 格式無效:', url, error.message)
-          resolve(false)
-        }
-        return
-      }
-      
-      const testAudio = new Audio()
-      const timeout = setTimeout(() => {
-        testAudio.src = ''
-        console.warn('⏰ URL 測試超時:', url)
-        resolve(false)
-      }, 2000)
-      
-      testAudio.addEventListener('canplay', () => {
-        clearTimeout(timeout)
-        testAudio.src = ''
-        console.log('✅ URL 測試通過:', url)
-        resolve(true)
-      }, { once: true })
-      
-      testAudio.addEventListener('error', (e) => {
-        clearTimeout(timeout)
-        testAudio.src = ''
-        console.warn('❌ URL 測試失敗:', url, e.target?.error?.message || '未知錯誤')
-        resolve(false)
-      }, { once: true })
-      
-      try {
-        testAudio.src = url
-        testAudio.load()
-      } catch (error) {
-        clearTimeout(timeout)
-        console.warn('❌ URL 設置失敗:', url, error.message)
-        resolve(false)
-      }
-    })
-  }
-
   // 檢查配置
   const checkConfig = async () => {
     try {
       console.log('🚂 檢查 Jamendo 配置...')
       
-      const configEndpoint = import.meta.env.PROD 
-        ? `${API_BASE}/api/health/`
-        : `${API_BASE}/api/jamendo/config/`
-      
-      const response = await fetch(configEndpoint)
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      if (!JAMENDO_CLIENT_ID) {
+        console.error('❌ JAMENDO_CLIENT_ID 未設置')
+        jamendoConfigured.value = false
+        return false
       }
       
-      const config = await response.json()
+      // 測試 API 連接
+      const testResponse = await fetch(`${JAMENDO_BASE_URL}/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=1`)
       
-      if (import.meta.env.PROD) {
-        jamendoConfigured.value = config.status === 'healthy' && 
-                                config.features?.jamendo_integration === true
+      if (testResponse.ok) {
+        jamendoConfigured.value = true
+        console.log('✅ Jamendo API 配置正常')
+        return true
       } else {
-        jamendoConfigured.value = config.available && config.status === 'configured'
+        throw new Error(`API 測試失敗: ${testResponse.status}`)
       }
-      
-      return jamendoConfigured.value
     } catch (error) {
       console.error('❌ Jamendo 配置檢查失敗:', error)
       jamendoConfigured.value = false
@@ -217,22 +162,25 @@ export function useJamendo() {
     }
   }
 
-  // API 請求封裝
+  // 直接 API 請求封裝
   const jamendoAPI = async (endpoint, params = {}) => {
     try {
-      const queryString = new URLSearchParams(params).toString()
-      const url = `${API_BASE}/api/jamendo/${endpoint}${queryString ? '?' + queryString : ''}`
-      
-      if (!import.meta.env.PROD) {
-        console.log('🔄 Jamendo API 請求:', endpoint, params)
+      const apiParams = {
+        client_id: JAMENDO_CLIENT_ID,
+        format: 'json',
+        ...params
       }
+      
+      const queryString = new URLSearchParams(apiParams).toString()
+      const url = `${JAMENDO_BASE_URL}/${endpoint}?${queryString}`
+      
+      console.log('🔄 Jamendo API 請求:', url)
       
       const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'same-origin'
+          'User-Agent': 'DDM360/1.0'
+        }
       })
       
       if (!response.ok) {
@@ -241,25 +189,21 @@ export function useJamendo() {
       
       const data = await response.json()
       
-      if (data.error) {
-        throw new Error(data.error)
+      if (!data.results) {
+        throw new Error('API 響應格式錯誤')
       }
       
-      if (!import.meta.env.PROD) {
-        console.log('✅ Jamendo API 響應:', data)
-      }
+      console.log('✅ Jamendo API 響應:', data.results.length, '筆結果')
+      return data.results
       
-      return data
     } catch (error) {
-      if (!import.meta.env.PROD) {
-        console.error('❌ Jamendo API 請求失敗:', error)
-      }
+      console.error('❌ Jamendo API 請求失敗:', error)
       lastError.value = error.message
       throw error
     }
   }
 
-  // 🔧 改進的播放音軌函數
+  // 改進的播放音軌函數
   const playTrack = async (track, playlistTracks = null, trackIndex = 0) => {
     try {
       console.log('🎵 準備播放:', track.name)
@@ -301,7 +245,7 @@ export function useJamendo() {
       // 設置新的音軌
       playerStore.setCurrentTrack(track)
       
-      // 🆕 改進音頻 URL 驗證和備用處理
+      // 改進音頻 URL 驗證和備用處理
       const audioUrls = getSupportedAudioUrl(track)
       if (audioUrls.length === 0) {
         throw new Error('沒有可用的音頻 URL')
@@ -475,7 +419,7 @@ export function useJamendo() {
     }
   }
 
-  // 🔧 改進的安全播放函數
+  // 改進的安全播放函數
   const safePlay = async () => {
     try {
       if (!audioPlayer.value || !audioPlayer.value.src) {
@@ -536,7 +480,7 @@ export function useJamendo() {
     }
   }
 
-  // 🔧 改進的安全暫停函數
+  // 改進的安全暫停函數
   const safePause = async () => {
     try {
       if (!audioPlayer.value.paused) {
@@ -613,11 +557,7 @@ export function useJamendo() {
     if (!audioPlayer.value || !playerStore.duration) return
     
     try {
-      const rect = event.currentTarget.getBoundingClientRect()
-      const clickX = event.clientX - rect.left
-      const progressPercent = clickX / rect.width
-      const newTime = progressPercent * playerStore.duration
-      
+      const newTime = event.targetTime || event.progressPercent * playerStore.duration
       audioPlayer.value.currentTime = newTime
       playerStore.setCurrentTime(Math.floor(newTime))
       console.log('🎯 跳轉到:', Math.floor(newTime), '秒')
@@ -707,17 +647,19 @@ export function useJamendo() {
     }
   }
 
-  // 搜尋功能
+  // 搜尋功能 - 使用真實 Jamendo API
   const searchTracks = async (query, options = {}) => {
     try {
       const params = {
-        q: query,
-        limit: 50,
-        ...options
+        search: query,
+        limit: options.limit || 50,
+        order: options.order || 'popularity_total',
+        include: 'musicinfo',
+        audioformat: 'mp32'
       }
       
-      const response = await jamendoAPI('search/', params)
-      return response.results || []
+      const results = await jamendoAPI('tracks', params)
+      return results
     } catch (error) {
       console.error('❌ 搜尋失敗:', error)
       return []
@@ -727,13 +669,15 @@ export function useJamendo() {
   const getTracksByTag = async (tag, options = {}) => {
     try {
       const params = {
-        tag: tag,
-        limit: 50,
-        ...options
+        tags: tag,
+        limit: options.limit || 50,
+        order: options.order || 'popularity_total',
+        include: 'musicinfo',
+        audioformat: 'mp32'
       }
       
-      const response = await jamendoAPI('tracks/tag/', params)
-      return response.results || []
+      const results = await jamendoAPI('tracks', params)
+      return results
     } catch (error) {
       console.error('❌ 按標籤搜尋失敗:', error)
       return []
@@ -743,12 +687,14 @@ export function useJamendo() {
   const getPopularTracks = async (options = {}) => {
     try {
       const params = {
-        limit: 50,
-        ...options
+        limit: options.limit || 50,
+        order: 'popularity_total',
+        include: 'musicinfo',
+        audioformat: 'mp32'
       }
       
-      const response = await jamendoAPI('tracks/popular/', params)
-      return response.results || []
+      const results = await jamendoAPI('tracks', params)
+      return results
     } catch (error) {
       console.error('❌ 獲取熱門音軌失敗:', error)
       return []
@@ -758,12 +704,14 @@ export function useJamendo() {
   const getLatestTracks = async (options = {}) => {
     try {
       const params = {
-        limit: 50,
-        ...options
+        limit: options.limit || 50,
+        order: 'releasedate_desc',
+        include: 'musicinfo',
+        audioformat: 'mp32'
       }
       
-      const response = await jamendoAPI('tracks/latest/', params)
-      return response.results || []
+      const results = await jamendoAPI('tracks', params)
+      return results
     } catch (error) {
       console.error('❌ 獲取最新音軌失敗:', error)
       return []
@@ -772,13 +720,18 @@ export function useJamendo() {
 
   const getRandomTracks = async (options = {}) => {
     try {
+      // Jamendo 沒有直接的隨機 API，我們使用隨機 offset
+      const randomOffset = Math.floor(Math.random() * 10000)
       const params = {
-        limit: 50,
-        ...options
+        limit: options.limit || 50,
+        offset: randomOffset,
+        order: 'popularity_total',
+        include: 'musicinfo',
+        audioformat: 'mp32'
       }
       
-      const response = await jamendoAPI('tracks/random/', params)
-      return response.results || []
+      const results = await jamendoAPI('tracks', params)
+      return results
     } catch (error) {
       console.error('❌ 獲取隨機音軌失敗:', error)
       return []
@@ -787,8 +740,8 @@ export function useJamendo() {
 
   const getAvailableTags = async () => {
     try {
-      const response = await jamendoAPI('tags/')
-      return response.results || []
+      const results = await jamendoAPI('tracks/tags')
+      return results.map(tag => tag.name) || []
     } catch (error) {
       console.error('❌ 獲取標籤失敗:', error)
       return ['pop', 'rock', 'electronic', 'jazz', 'classical', 'hiphop', 'metal', 'world', 'soundtrack', 'lounge']
