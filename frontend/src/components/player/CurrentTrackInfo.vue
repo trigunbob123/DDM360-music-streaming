@@ -155,26 +155,4 @@ const formatDuration = (seconds) => {
   transition-duration: 300ms;
 }
 
-/* 響應式調整 */
-@media (max-width: 640px) {
-  .w-14 {
-    @apply w-12;
-  }
-  
-  .h-14 {
-    @apply h-12;
-  }
-  
-  .mr-4 {
-    @apply mr-3;
-  }
-  
-  .text-sm {
-    @apply text-xs;
-  }
-  
-  .text-xs {
-    @apply text-xs;
-  }
-}
 </style>
