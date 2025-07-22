@@ -3,8 +3,11 @@ import { usePlayerStore } from '@/stores/playerStore'
 
 export function useJamendo() {
   // 基本配置
-  const JAMENDO_CLIENT_ID = import.meta.env.VITE_JAMENDO_CLIENT_ID
+  const JAMENDO_CLIENT_ID = import.meta.env.VITE_JAMENDO_CLIENT_ID || '93957ee4'
   const JAMENDO_BASE_URL = 'https://api.jamendo.com/v3.0'
+
+  // 添加後端API基礎URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
   
   // Store
   const playerStore = usePlayerStore()
@@ -46,22 +49,43 @@ export function useJamendo() {
     try {
       console.log('🚂 檢查 Jamendo 配置...')
       
-      if (!JAMENDO_CLIENT_ID) {
-        console.error('❌ JAMENDO_CLIENT_ID 未設置')
-        jamendoConfigured.value = false
-        return false
-      }
-      
-      // 測試 API 連接
-      const testResponse = await fetch(`${JAMENDO_BASE_URL}/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=1`)
-      
-      if (testResponse.ok) {
+      // 方法1：檢查環境變數
+      if (JAMENDO_CLIENT_ID && JAMENDO_CLIENT_ID !== 'your-jamendo-client-id') {
+        console.log('✅ 從環境變數找到 Jamendo Client ID')
         jamendoConfigured.value = true
-        console.log('✅ Jamendo API 配置正常')
         return true
-      } else {
-        throw new Error(`API 測試失敗: ${testResponse.status}`)
       }
+      
+      // 方法2：從後端API獲取配置
+      try {
+        const configResponse = await fetch(`${API_BASE_URL}/jamendo/config/`)
+        if (configResponse.ok) {
+          const config = await configResponse.json()
+          if (config.available && config.client_id) {
+            console.log('✅ 從後端API獲取到 Jamendo 配置')
+            jamendoConfigured.value = true
+            return true
+          }
+        }
+      } catch (apiError) {
+        console.warn('⚠️ 無法從後端獲取配置，使用環境變數:', apiError)
+      }
+      
+      // 方法3：測試直接API連接（使用預設ID）
+      if (JAMENDO_CLIENT_ID) {
+        const testResponse = await fetch(
+          `${JAMENDO_BASE_URL}/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=1`
+        )
+        
+        if (testResponse.ok) {
+          jamendoConfigured.value = true
+          console.log('✅ Jamendo API 直接測試成功')
+          return true
+        }
+      }
+      
+      throw new Error('所有配置檢查方法都失敗')
+      
     } catch (error) {
       console.error('❌ Jamendo 配置檢查失敗:', error)
       jamendoConfigured.value = false

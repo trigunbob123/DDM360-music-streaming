@@ -6,3 +6,26 @@ INFO 2025-07-21 14:22:10,604 autoreload 19644 4944 Watching for file changes wit
 INFO 2025-07-21 17:18:23,834 autoreload 18296 24912 Watching for file changes with StatReloader
 INFO 2025-07-22 11:09:46,725 autoreload 18296 24912 C:\Users\澄佑\Desktop\ddm360-music-streaming\backend\music_streaming\urls.py changed, reloading.
 INFO 2025-07-22 11:09:48,082 autoreload 16704 10944 Watching for file changes with StatReloader
+INFO 2025-07-22 11:14:40,280 autoreload 24780 2636 Watching for file changes with StatReloader
+INFO 2025-07-22 11:40:00,601 autoreload 2380 2856 Watching for file changes with StatReloader
+INFO 2025-07-22 12:01:29,006 autoreload 19264 9000 Watching for file changes with StatReloader
+INFO 2025-07-22 12:07:56,568 autoreload 8228 12908 Watching for file changes with StatReloader
+INFO 2025-07-22 12:11:09,079 autoreload 15296 19940 Watching for file changes with StatReloader
+INFO 2025-07-22 12:23:15,455 autoreload 21252 18836 Watching for file changes with StatReloader
+INFO 2025-07-22 12:23:26,548 basehttp 21252 22280 "GET /api/health/ HTTP/1.1" 200 101
+WARNING 2025-07-22 12:23:26,637 log 21252 22280 Not Found: /favicon.ico
+WARNING 2025-07-22 12:23:26,638 basehttp 21252 22280 "GET /favicon.ico HTTP/1.1" 404 2390
+INFO 2025-07-22 12:25:59,422 autoreload 21252 18836 C:\Users\澄佑\Desktop\ddm360-music-streaming\backend\music_streaming\urls.py changed, reloading.
+INFO 2025-07-22 12:26:00,017 autoreload 3296 12336 Watching for file changes with StatReloader
+INFO 2025-07-22 12:30:24,657 autoreload 8332 6116 Watching for file changes with StatReloader
+INFO 2025-07-22 13:32:33,532 autoreload 19116 12400 Watching for file changes with StatReloader
+INFO 2025-07-22 13:33:36,236 basehttp 19116 9976 "GET /api/health/ HTTP/1.1" 200 129
+INFO 2025-07-22 13:33:44,605 views 19116 9976 Jamendo API 請求: https://api.jamendo.com/v3.0/tracks with params: {'client_id': '93957ee4', 'format': 'json', 'limit': 1}
+INFO 2025-07-22 13:33:48,948 views 19116 9976 Jamendo API 響應成功: 1 項結果
+INFO 2025-07-22 13:33:48,952 basehttp 19116 9976 "GET /api/jamendo/health/ HTTP/1.1" 200 146
+INFO 2025-07-22 13:34:30,038 basehttp 19116 9976 "GET /api/jamendo/config/ HTTP/1.1" 200 112
+INFO 2025-07-22 13:34:37,481 views 19116 9976 Jamendo API 請求: https://api.jamendo.com/v3.0/tracks with params: {'client_id': '93957ee4', 'format': 'json', 'order': 'popularity_total', 'include': 'musicinfo', 'audioformat': 'mp32', 'limit': 20}
+INFO 2025-07-22 13:34:38,457 views 19116 9976 Jamendo API 響應成功: 20 項結果
+INFO 2025-07-22 13:34:38,461 basehttp 19116 9976 "GET /api/jamendo/tracks/popular/ HTTP/1.1" 200 81537
+INFO 2025-07-22 13:41:29,715 autoreload 20460 24712 Watching for file changes with StatReloader
+INFO 2025-07-22 13:46:26,842 autoreload 9784 4772 Watching for file changes with StatReloader
