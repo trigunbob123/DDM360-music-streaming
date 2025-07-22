@@ -4,3 +4,5 @@ WARNING 2025-07-15 18:36:16,064 log 6192 17580 Not Found: /favicon.ico
 WARNING 2025-07-15 18:36:16,064 basehttp 6192 17580 "GET /favicon.ico HTTP/1.1" 404 2217
 INFO 2025-07-21 14:22:10,604 autoreload 19644 4944 Watching for file changes with StatReloader
 INFO 2025-07-21 17:18:23,834 autoreload 18296 24912 Watching for file changes with StatReloader
+INFO 2025-07-22 11:09:46,725 autoreload 18296 24912 C:\Users\¼á¦ö\Desktop\ddm360-music-streaming\backend\music_streaming\urls.py changed, reloading.
+INFO 2025-07-22 11:09:48,082 autoreload 16704 10944 Watching for file changes with StatReloader
